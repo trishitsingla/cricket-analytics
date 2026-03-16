@@ -2,14 +2,36 @@ import pandas as pd
 
 df = pd.read_csv("data/processed/deliveries.csv")
 
-df["is_boundary"] = df["runs"].apply(lambda x: 1 if x >= 4 else 0)
+# phase classification
+def get_phase(over):
+    if over < 6:
+        return "powerplay"
+    elif over < 15:
+        return "middle"
+    else:
+        return "death"
 
-df["dot_ball"] = df["runs"].apply(lambda x: 1 if x == 0 else 0)
+df["phase"] = df["over"].apply(get_phase)
 
-df["phase"] = df["over"].apply(
-    lambda x: "powerplay" if x < 6 else "middle" if x < 15 else "death"
-)
+# ball number in innings
+df["ball_in_innings"] = df["over"] * 6 + df["ball"]
+
+# cumulative runs
+df["cum_runs"] = df.groupby(["match_id","inning"])["runs_total"].cumsum()
+
+# cumulative wickets
+df["cum_wickets"] = df.groupby(["match_id","inning"])["wicket"].cumsum()
+
+# balls remaining in innings
+df["balls_remaining"] = 120 - df["ball_in_innings"]
+
+# wickets remaining
+df["wickets_remaining"] = 10 - df["cum_wickets"]
+
+# run rate
+df["run_rate"] = df["cum_runs"] / (df["ball_in_innings"] / 6)
 
 df.to_csv("data/processed/ball_features.csv", index=False)
 
-print("Feature file created")
+print("Feature dataset created")
+print("Rows:", len(df))

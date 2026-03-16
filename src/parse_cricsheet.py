@@ -2,53 +2,94 @@ import json
 import os
 import pandas as pd
 
-data_dir = "data/raw/cricsheet_json"
+DATA_PATH = "data/raw/cricsheet_json"
+
 rows = []
 
-for file in os.listdir(data_dir):
+for file in os.listdir(DATA_PATH):
+
     if not file.endswith(".json"):
         continue
 
-    path = os.path.join(data_dir, file)
-
-    with open(path) as f:
+    with open(f"{DATA_PATH}/{file}") as f:
         match = json.load(f)
 
     match_id = file.replace(".json", "")
 
     innings = match.get("innings", [])
 
-    for inning in innings:
-        inning_data = list(inning.values())[0]
+    for inning_index, inning in enumerate(innings, start=1):
 
-        team = inning_data.get("team")
+        # ----------------
+        # NEW FORMAT
+        # ----------------
+        if isinstance(inning, dict) and "overs" in inning:
 
-        for over in inning_data.get("overs", []):
-            over_number = over["over"]
+            team = inning.get("team")
 
-            for ball in over["deliveries"]:
-                batter = ball["batter"]
-                bowler = ball["bowler"]
+            for over in inning["overs"]:
 
-                runs = ball["runs"]["total"]
+                over_num = over.get("over")
 
-                rows.append([
-                    match_id,
-                    team,
-                    over_number,
-                    batter,
-                    bowler,
-                    runs
-                ])
+                for ball_num, delivery in enumerate(over.get("deliveries", []), start=1):
 
-df = pd.DataFrame(rows, columns=[
-    "match_id",
-    "batting_team",
-    "over",
-    "batter",
-    "bowler",
-    "runs"
-])
+                    runs = delivery.get("runs", {})
+
+                    rows.append({
+                        "match_id": match_id,
+                        "inning": inning_index,
+                        "batting_team": team,
+                        "over": over_num,
+                        "ball": ball_num,
+                        "batter": delivery.get("batter"),
+                        "bowler": delivery.get("bowler"),
+                        "runs_batter": runs.get("batter", 0),
+                        "runs_total": runs.get("total", 0),
+                        "wicket": 1 if "wickets" in delivery else 0
+                    })
+
+        # ----------------
+        # OLD FORMAT
+        # ----------------
+        elif isinstance(inning, dict):
+
+            inning_name = list(inning.keys())[0]
+            inning_data = inning.get(inning_name)
+
+            if not isinstance(inning_data, dict):
+                continue
+
+            team = inning_data.get("team")
+
+            deliveries = inning_data.get("deliveries", [])
+
+            for delivery in deliveries:
+
+                ball_key = list(delivery.keys())[0]
+                info = delivery.get(ball_key)
+
+                if not isinstance(info, dict):
+                    continue
+
+                runs = info.get("runs", {})
+
+                over = int(float(ball_key))
+                ball = int((float(ball_key) - over) * 10)
+
+                rows.append({
+                    "match_id": match_id,
+                    "inning": inning_index,
+                    "batting_team": team,
+                    "over": over,
+                    "ball": ball,
+                    "batter": info.get("batsman"),
+                    "bowler": info.get("bowler"),
+                    "runs_batter": runs.get("batsman", 0),
+                    "runs_total": runs.get("total", 0),
+                    "wicket": 1 if "wicket" in info else 0
+                })
+
+df = pd.DataFrame(rows)
 
 os.makedirs("data/processed", exist_ok=True)
 
