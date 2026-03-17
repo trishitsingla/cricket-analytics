@@ -16,6 +16,15 @@ for file in os.listdir(DATA_PATH):
 
     match_id = file.replace(".json", "")
 
+    match_info = match.get("info", dict())
+    match_type = match_info.get("match_type", "")
+    gender =  match_info.get("gender", "")
+    city = match_info.get("city", "")
+    event = match_info.get("event", dict())
+    event_name = event.get("name", "")
+    dates = match_info.get("dates", [])
+    start_date = dates[0]
+    end_date = dates[-1]
     innings = match.get("innings", [])
 
     for inning_index, inning in enumerate(innings, start=1):
@@ -37,6 +46,12 @@ for file in os.listdir(DATA_PATH):
 
                     rows.append({
                         "match_id": match_id,
+			"match_type": match_type,
+			"city": city,
+			"event": event_name,
+			"start_date": start_date,
+			"end_date": end_date,
+			"gender": gender,
                         "inning": inning_index,
                         "batting_team": team,
                         "over": over_num,
@@ -78,6 +93,12 @@ for file in os.listdir(DATA_PATH):
 
                 rows.append({
                     "match_id": match_id,
+		    "match_type": match_type,
+		    "city": city,
+	    	    "event": event_name,
+		    "start_date": start_date,
+		    "end_date": end_date,
+		    "gender": gender,
                     "inning": inning_index,
                     "batting_team": team,
                     "over": over,
