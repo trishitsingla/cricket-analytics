@@ -1,6 +1,13 @@
 import pandas as pd
 import numpy as np
 
+# Constant: Test Playing Nations
+TEST_PLAYING_NATIONS = [
+    "India", "Australia", "England", "South Africa", "New Zealand",
+    "Pakistan", "Sri Lanka", "West Indies", "Bangladesh", "Zimbabwe",
+    "Afghanistan", "Ireland"
+]
+
 # =========================
 # PHASE MAPPING
 # =========================
